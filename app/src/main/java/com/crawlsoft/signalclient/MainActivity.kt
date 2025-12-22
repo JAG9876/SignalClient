@@ -3,20 +3,21 @@ package com.crawlsoft.signalclient
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.crawlsoft.signalclient.ui.theme.SignalClientTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,38 +25,42 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         //enableEdgeToEdge()
         setContent {
-            GreetingPreview()
+            LoginScreen()
         }
     }
-}
-
-@Composable
-fun LoginButton() {
-    var buttonClickedCount by remember { mutableStateOf(0) }
-    Button( onClick = {
-        buttonClickedCount++
-        println("Button clicked! Count: $buttonClickedCount")
-    }) {
-        Text( text = "Click me! Count: $buttonClickedCount")
-    }
-    Greeting(" your Android")
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello again you stupid $name!",
-        modifier = modifier
-    )
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun LoginScreen() {
+    var loggedInState by remember { mutableStateOf(0) }
     SignalClientTheme {
-        Column() {
-            Greeting(" my Android")
-            LoginButton()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button( enabled = loggedInState == 0, onClick = {
+                loggedInState = 1
+                println("Button clicked! loggedIn state: $loggedInState")
+            }) {
+                when (loggedInState) {
+                    2 -> Text(text = "Logged in")
+                    1 -> Text(text = "Logging in")
+                    else -> Text(text = "Login")
+                }
+            }
+            Account("")
         }
     }
+}
+
+@Composable
+fun Account(emailAddress: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Account: $emailAddress",
+        modifier = modifier
+    )
 }
