@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +51,9 @@ class MainActivity : ComponentActivity() {
     @Preview(showBackground = true)
     @Composable
     fun LoginScreen(context: Context = this) {
-        var loggedInState by remember { mutableStateOf(0) }
+        var loggedInState by remember { mutableIntStateOf(0) }
+        val account = MutableString("")
+
         SignalClientTheme {
             Column(
                 modifier = Modifier
@@ -68,12 +70,13 @@ class MainActivity : ComponentActivity() {
                         2 -> Text(text = "Logged in")
                         1 -> {
                             Text(text = "Logging in")
-                            googleLogin(context)
+                            googleLogin(context, account)
+                            //Account(per)
                         }
                         else -> Text(text = "Login")
                     }
                 }
-                Account("")
+                Account(account.value)
             }
         }
     }
@@ -86,7 +89,7 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    fun googleLogin(context: Context) {
+    fun googleLogin(context: Context, emailAccount: MutableString) {
         val signInWithGoogleOption = GetSignInWithGoogleOption.Builder(WEB_CLIENT_ID)
             .build()
 
@@ -110,12 +113,14 @@ class MainActivity : ComponentActivity() {
                     Log.e("TAG", "loginSuccess NoCredentialException", e)
                 }
             }.collect {
-                loginSuccess(it)
+                emailAccount.value = loginSuccess(it)
             }
         }
     }
 
-    private fun loginSuccess(credential: androidx.credentials.Credential) {
+    private fun loginSuccess(credential: androidx.credentials.Credential): String {
+        var emailAccount: String
+        emailAccount = ""
         when(credential) {
             is PasswordCredential -> {
                 val password = credential.password
@@ -134,6 +139,11 @@ class MainActivity : ComponentActivity() {
                 if(credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                     try {
                         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+
+                        // Send a get access request to server
+
+                        // googleIdTokenCredential.id is the account / email address
+                        emailAccount = googleIdTokenCredential.id
                         Log.e("TAG", "loginSuccess idToken: ${googleIdTokenCredential.idToken}  ${googleIdTokenCredential.displayName}")
                     } catch (e: GoogleIdTokenParsingException) {
                         e.printStackTrace()
@@ -144,5 +154,8 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        return emailAccount
     }
 }
+
+class MutableString(var value: String)
