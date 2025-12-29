@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+<network-security-config xmlns:android="http://schemas.android.com/apk/res/android">
+
+</network-security-config>
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <trust-anchors>
+            <!-- Trust preinstalled CAs and user added CAs for development -->
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

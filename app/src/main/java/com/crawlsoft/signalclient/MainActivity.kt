@@ -65,11 +65,13 @@ class MainActivity : ComponentActivity() {
             //.baseUrl("https://randomuser.me/")
             //.baseUrl("https://localhost:7102/")
             .baseUrl("https://10.0.2.2:7102/")
+            //.baseUrl("http://10.0.2.2:5228/")
             .addConverterFactory(MoshiConverterFactory.create())
             .build()
             .create(UserService::class.java)
 
         /* Test call - check during debugging for trusted root certificate message */
+        /*
         service.google().enqueue(object : Callback<AuthResponse> {
 
             /* The HTTP call failed. This method is run on the main thread */
@@ -81,25 +83,6 @@ class MainActivity : ComponentActivity() {
             /* The HTTP call was successful, we should still check status code and response body
              * on a production app. This method is run on the main thread */
             override fun onResponse(call: Call<AuthResponse>, response: Response<AuthResponse>) {
-                /* This will print the response of the network call to the Logcat */
-                Log.d("TAG_", response.body().toString())
-            }
-        })
-
-        /* Calls the endpoint set on getUsers (/api) from UserService using enqueue method
-         * that creates a new worker thread to make the HTTP call */
-        /*
-        service.getUsers().enqueue(object : Callback<UserResponse> {
-
-            /* The HTTP call failed. This method is run on the main thread */
-            override fun onFailure(call: Call<UserResponse>, t: Throwable) {
-                Log.d("TAG_", "An error happened!")
-                t.printStackTrace()
-            }
-
-            /* The HTTP call was successful, we should still check status code and response body
-             * on a production app. This method is run on the main thread */
-            override fun onResponse(call: Call<UserResponse>, response: Response<UserResponse>) {
                 /* This will print the response of the network call to the Logcat */
                 Log.d("TAG_", response.body().toString())
             }
@@ -200,7 +183,7 @@ class MainActivity : ComponentActivity() {
                         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
 
                         // Send a get access request to server
-                        validateGoogleIdToken(googleIdTokenCredential.idToken)
+                        // validateGoogleIdToken(googleIdTokenCredential.idToken)
 
                         // googleIdTokenCredential.id is the account / email address
                         emailAccount = googleIdTokenCredential.id
@@ -252,7 +235,9 @@ interface UserService {
     @GET("/api")
     fun getUsers(): Call<UserResponse>
 
-    @POST("/api/Auth")
+    @POST("/api/Auth2")
     fun google(idToken: String): Call<AuthResponse>
+
+    @POST("/api/Auth")
     fun google(): Call<AuthResponse>
 }
