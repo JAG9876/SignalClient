@@ -1,4 +1,2 @@
 package com.crawlsoft.signalclient
 
-class MainActivity {
-}
