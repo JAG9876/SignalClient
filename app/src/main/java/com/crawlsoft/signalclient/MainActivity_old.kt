@@ -42,7 +42,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.POST
 
-class MainActivity : ComponentActivity() {
+class MainActivityOld : ComponentActivity() {
     companion object {
         const val WEB_CLIENT_ID = "935891679520-ur0sfnqsi9kchrtlhtmefdnsqup9771s.apps.googleusercontent.com"
     }
