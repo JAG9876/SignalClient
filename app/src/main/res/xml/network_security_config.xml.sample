@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-<network-security-config xmlns:android="http://schemas.android.com/apk/res/android">
 
-</network-security-config>
--->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="false">
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- allow HTTP traffic to a domain or an IP address (examples: 10.0.2.2 (localhost) / home router IP address) -->
         <domain includeSubdomains="true">10.0.2.2</domain>
         <trust-anchors>
             <!-- Trust preinstalled CAs and user added CAs for development -->
