@@ -15,7 +15,6 @@ fun HomeScreen() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "Welcome to the Main Screen", style = MaterialTheme.typography.headlineMedium)
         Button(onClick = {
             isRecording = !isRecording
             if (isRecording) {
