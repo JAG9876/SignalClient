@@ -5,10 +5,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.material3.*
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun HomeScreen() {
-    var soundRecorder by remember { mutableStateOf(SoundRecorder())}
+    val context = LocalContext.current
+    var soundRecorder by remember { mutableStateOf(SoundRecorder(context))}
     var isRecording by remember { mutableStateOf(false ) }
 
     Box(

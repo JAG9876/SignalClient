@@ -5,6 +5,7 @@ import android.content.Context;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
+import android.provider.Settings;
 
 import androidx.annotation.RequiresPermission;
 
@@ -27,7 +28,6 @@ class AudioBuffer {
 
 public class SoundRecorder {
     private String android_id;
-    private Context context;
     private static final int BUFFER_COUNT = 64;
     private int currentBufferIndex = 0;
 
@@ -40,17 +40,13 @@ public class SoundRecorder {
 
     private AudioBuffer[] buffers = new AudioBuffer[BUFFER_COUNT];
 
-    public SoundRecorder(/*Context context*/) {
-        //this.context = context;
-        android_id =  "123456789";
-        //android_id =  Secure.getString(context.getContentResolver(), Secure.ANDROID_ID);
+    public SoundRecorder(Context context) {
+        android_id =  Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
     }
 
     private void sendPostRequest(long readTime, long readDuration, int currentBufferIndex, short[] sData) {
         try {
-            //URL url = new URL("https://10.0.2.2:7144/api/v1/Audio/PostAudio");
-            //URL url = new URL("https://kiva.crawlsoft.com:7144/api/v1/Audio/PostAudio");
-            URL url = new URL("https://kiva.crawlsoft.com/api/v1/Audio/PostAudio");
+            URL url = new URL(BuildConfig.SERVER_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");

@@ -44,7 +44,7 @@ import retrofit2.http.POST
 
 class MainActivityOld : ComponentActivity() {
     companion object {
-        const val WEB_CLIENT_ID = "935891679520-ur0sfnqsi9kchrtlhtmefdnsqup9771s.apps.googleusercontent.com"
+        const val WEB_CLIENT_ID = "xxxxx"
     }
 
     private lateinit var service: UserService
