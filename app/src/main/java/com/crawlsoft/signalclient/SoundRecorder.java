@@ -53,6 +53,7 @@ public class SoundRecorder {
             conn.setRequestProperty("Accept", "application/json");
             conn.setDoOutput(true);
 
+            /* Old POC way
             JSONObject jsonParam = new JSONObject();
             jsonParam.put("DeviceId", "Android-" + android_id);
             jsonParam.put("ReadTime", readTime);
@@ -63,6 +64,29 @@ public class SoundRecorder {
                 jsonArray.put(s);
             }
             jsonParam.put("AudioBuffer", jsonArray);
+            */
+            // Signal way
+            JSONObject jsonParam = new JSONObject();
+            jsonParam.put("CorrelationId", "unique id to come");
+            jsonParam.put("DeviceId", "Android-" + android_id);
+            jsonParam.put("RequestedByServer", false);
+
+            JSONArray recordings = new JSONArray();
+
+            JSONObject recording = new JSONObject();
+            recording.put("ReadTime", readTime);
+            recording.put("ReadDuration", readDuration);
+            recording.put("BufferIndex", currentBufferIndex);
+            JSONArray jsonArray = new JSONArray();
+            for (short s : sData) {
+                jsonArray.put(s);
+            }
+            recording.put("Audio", jsonArray);
+            recordings.put(recording);
+
+            jsonParam.put("Recordings", recordings);
+
+
 
             try (OutputStream os = conn.getOutputStream()) {
                 byte[] input = jsonParam.toString().getBytes("utf-8");
