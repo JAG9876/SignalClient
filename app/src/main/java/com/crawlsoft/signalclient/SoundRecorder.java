@@ -15,6 +15,7 @@ import org.json.JSONObject;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.UUID;
 
 class AudioBuffer {
     short[] data;
@@ -65,9 +66,10 @@ public class SoundRecorder {
             }
             jsonParam.put("AudioBuffer", jsonArray);
             */
-            // Signal way
+            // SignalServer way
             JSONObject jsonParam = new JSONObject();
-            jsonParam.put("CorrelationId", "unique id to come");
+            String correlationId = UUID.randomUUID().toString();
+            jsonParam.put("CorrelationId", correlationId);
             jsonParam.put("DeviceId", "Android-" + android_id);
             jsonParam.put("RequestedByServer", false);
 
