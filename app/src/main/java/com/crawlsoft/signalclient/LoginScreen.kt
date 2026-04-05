@@ -15,7 +15,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
-
+import android.provider.Settings
 
 
 @Composable
@@ -73,12 +73,43 @@ suspend fun signInWithGoogle(
 
             val idToken = googleIdTokenCredential.idToken
 
-            // TODO: Send ID token to your backend here if needed
-
-            onLoginSuccess()
+            if (!GetAccessToken(idToken, context))
+                throw Exception("GetAccessToken failed")
+            else
+                onLoginSuccess()
         }
     }
     catch (e: GetCredentialException) {
         e.printStackTrace()
+    }
+}
+
+suspend fun GetAccessToken(idToken: String, context: Context): Boolean {
+    //return true
+    return try {
+        val deviceId = "Android-" + Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID)
+        val response = RetrofitClient.instance.exchangeToken(LoginRequest(idToken, deviceId))
+
+        if (response.isSuccessful && response.body() != null) {
+            val tokens = response.body()!!
+            saveTokens(context = context,tokens.accessToken, tokens.refreshToken)
+            true
+        } else {
+            // Log error body if needed: response.errorBody()?.string()
+            false
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        false
+    }
+}
+
+// Could be in a dedicated TokenManager class
+fun saveTokens(context: Context, accessToken: String, refreshToken: String) {
+    val sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+    sharedPrefs.edit().apply {
+        putString("access_token", accessToken)
+        putString("refresh_token", refreshToken)
+        apply()
     }
 }

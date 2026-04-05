@@ -5,7 +5,6 @@ import android.content.Context;
 import android.media.AudioRecord;
 import android.media.AudioFormat;
 import android.media.MediaRecorder;
-import android.provider.Settings;
 
 import androidx.annotation.RequiresPermission;
 
@@ -15,6 +14,7 @@ import org.json.JSONObject;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 class AudioBuffer {
@@ -28,21 +28,22 @@ class AudioBuffer {
 }
 
 public class SoundRecorder {
-    private String android_id;
+    private final String bearer;
     private static final int BUFFER_COUNT = 64;
     private int currentBufferIndex = 0;
 
-    private int BufferElements2Rec = 44100;
-    private int BytesPerElement = 2; // 2 bytes in 16bit format
+    private final int BufferElements2Rec = 44100;
+    //private final int BytesPerElement = 2; // 2 bytes in 16bit format
 
     private AudioRecord audioRecord;
     private boolean isRecording = false;
     private Thread recordingThread = null;
 
-    private AudioBuffer[] buffers = new AudioBuffer[BUFFER_COUNT];
+    private final AudioBuffer[] buffers = new AudioBuffer[BUFFER_COUNT];
 
     public SoundRecorder(Context context) {
-        android_id =  Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
+        android.content.SharedPreferences sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
+        bearer = sharedPrefs.getString("access_token", null);
     }
 
     private void sendPostRequest(long readTime, long readDuration, int currentBufferIndex, short[] sData) {
@@ -52,25 +53,13 @@ public class SoundRecorder {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; utf-8");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Bearer", bearer);
             conn.setDoOutput(true);
 
-            /* Old POC way
-            JSONObject jsonParam = new JSONObject();
-            jsonParam.put("DeviceId", "Android-" + android_id);
-            jsonParam.put("ReadTime", readTime);
-            jsonParam.put("ReadDuration", readDuration);
-            jsonParam.put("BufferIndex", currentBufferIndex);
-            JSONArray jsonArray = new JSONArray();
-            for (short s : sData) {
-                jsonArray.put(s);
-            }
-            jsonParam.put("AudioBuffer", jsonArray);
-            */
             // SignalServer way
             JSONObject jsonParam = new JSONObject();
             String correlationId = UUID.randomUUID().toString();
             jsonParam.put("CorrelationId", correlationId);
-            jsonParam.put("DeviceId", "Android-" + android_id);
             jsonParam.put("RequestedByServer", false);
 
             JSONArray recordings = new JSONArray();
@@ -91,7 +80,7 @@ public class SoundRecorder {
 
 
             try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonParam.toString().getBytes("utf-8");
+                byte[] input = jsonParam.toString().getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
             }
 
@@ -122,8 +111,6 @@ public class SoundRecorder {
             @RequiresPermission(Manifest.permission.RECORD_AUDIO)
             @Override
             public void run() {
-
-                short numberOfReads = 0;
                 for (int i = 0; i < BUFFER_COUNT; i++) {
                     AudioBuffer audioBuffer = new AudioBuffer(new short[BufferElements2Rec], 0);
                     buffers[i] = audioBuffer;
@@ -138,8 +125,6 @@ public class SoundRecorder {
                     audioRecord.read(buffers[currentBufferIndex].data, 0, BufferElements2Rec );
 
                     long readDuration = System.currentTimeMillis() - readTime;
-
-                    numberOfReads++;
 
                     if (AnyMatch(buffers[currentBufferIndex].data, (short)1024)) {
                         sendPostRequest(readTime, readDuration, currentBufferIndex, buffers[currentBufferIndex].data);
