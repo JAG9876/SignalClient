@@ -11,6 +11,8 @@ import androidx.annotation.RequiresPermission;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -28,7 +30,9 @@ class AudioBuffer {
 }
 
 public class SoundRecorder {
-    private final String bearer;
+    private final Context context;
+    private String bearer;
+    private final String refreshToken;
     private static final int BUFFER_COUNT = 64;
     private int currentBufferIndex = 0;
 
@@ -41,12 +45,14 @@ public class SoundRecorder {
 
     private final AudioBuffer[] buffers = new AudioBuffer[BUFFER_COUNT];
 
-    public SoundRecorder(Context context) {
+    public SoundRecorder(Context ctx) {
+        context = ctx;
         android.content.SharedPreferences sharedPrefs = context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE);
         bearer = sharedPrefs.getString("access_token", null);
+        refreshToken = sharedPrefs.getString("refresh_token", null);
     }
 
-    private void sendPostRequest(long readTime, long readDuration, int currentBufferIndex, short[] sData) {
+    private void sendPostRequest(long readTime, long readDuration, int currentBufferIndex, short[] sData, boolean isRetry) {
         try {
             URL url = new URL(BuildConfig.SERVER_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -56,7 +62,6 @@ public class SoundRecorder {
             conn.setRequestProperty("Bearer", bearer);
             conn.setDoOutput(true);
 
-            // SignalServer way
             JSONObject jsonParam = new JSONObject();
             String correlationId = UUID.randomUUID().toString();
             jsonParam.put("CorrelationId", correlationId);
@@ -87,10 +92,60 @@ public class SoundRecorder {
             int responseCode = conn.getResponseCode();
             System.out.println("POST Response Code :: " + responseCode);
 
+            if (responseCode == 401 && !isRetry) {
+                System.out.println("Unauthorized. Attempting to refresh token...");
+
+                if (refreshAccessToken()) {
+                    sendPostRequest(readTime, readDuration, currentBufferIndex, sData, true);
+                } else {
+                    System.out.println("Refresh token failed. User may need to log in again.");
+                }
+            }
             conn.disconnect();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean refreshAccessToken() {
+        try {
+            URL url = new URL(BuildConfig.BASE_URL + "api/v1/auth/refreshaccesstoken");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            JSONObject body = new JSONObject();
+            body.put("refreshToken", refreshToken);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.toString().getBytes(StandardCharsets.UTF_8));
+            }
+
+            if (conn.getResponseCode() == 200) {
+                StringBuilder response = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
+                    }
+                }
+
+                JSONObject responseJson = new JSONObject(response.toString());
+                String newAccessToken = responseJson.getString("accessToken");
+
+                this.bearer = newAccessToken;
+                context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString("access_token", newAccessToken)
+                        .apply();
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public void init() {
@@ -127,7 +182,7 @@ public class SoundRecorder {
                     long readDuration = System.currentTimeMillis() - readTime;
 
                     if (AnyMatch(buffers[currentBufferIndex].data, (short)1024)) {
-                        sendPostRequest(readTime, readDuration, currentBufferIndex, buffers[currentBufferIndex].data);
+                        sendPostRequest(readTime, readDuration, currentBufferIndex, buffers[currentBufferIndex].data, false);
                     }
                     currentBufferIndex++;
                     if (currentBufferIndex >= BUFFER_COUNT)
